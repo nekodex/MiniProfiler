@@ -1,9 +1,7 @@
 if defined?(ActiveResource)
   ActiveResource::Connection.class_eval do
     def request_with_mini_profiler(*arguments)
-      # Rails.logger.info "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
       current = ::Rack::MiniProfiler.current
-      current.skip_backtrace = true
       start = Time.now
       result = request_without_mini_profiler(*arguments)
       elapsed_time = ((Time.now - start).to_f * 1000).round(1)
