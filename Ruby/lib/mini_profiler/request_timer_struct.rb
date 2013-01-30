@@ -4,7 +4,7 @@ module Rack
   class MiniProfiler
 
     class RequestTimerStruct < TimerStruct
-      
+
       def self.createRoot(name, page)
         rt = RequestTimerStruct.new(name, page, nil)
         rt["IsRoot"]= true
@@ -24,10 +24,16 @@ module Rack
               "HasChildren"=> false,
               "KeyValues" => nil,
               "HasSqlTimings"=> false,
+              "HasActiveResourceTimings"=> false,
+              "HasCacheTimings"=> false,
               "HasDuplicateSqlTimings"=> false,
               "TrivialDurationThresholdMilliseconds" => 2,
               "SqlTimings" => [],
               "SqlTimingsDurationMilliseconds"=> 0,
+              "ActiveResourceTimings" => [],
+              "ActiveResourceTimingsDurationMilliseconds"=> 0,
+              "CacheTimings" => [],
+              "CacheTimingsDurationMilliseconds"=> 0,
               "IsTrivial"=> false,
               "IsRoot"=> false,
               "Depth"=> parent ? parent.depth + 1 : 0,
@@ -77,7 +83,27 @@ module Rack
         self['SqlTimings'].push(timer)
         self['HasSqlTimings'] = true
         self['SqlTimingsDurationMilliseconds'] += elapsed_ms
-        page['DurationMillisecondsInSql'] += elapsed_ms        
+        page['DurationMillisecondsInSql'] += elapsed_ms
+        timer
+      end
+
+      def add_active_resource(method, path, elapsed_ms, page, skip_backtrace = false, full_backtrace = false)
+        timer = ActiveResourceTimerStruct.new(method, path, elapsed_ms, page, self , skip_backtrace, full_backtrace)
+        timer['ParentTimingId'] = self['Id']
+        self['ActiveResourceTimings'].push(timer)
+        self['HasActiveResourceTimings'] = true
+        self['ActiveResourceTimingsDurationMilliseconds'] += elapsed_ms
+        page['DurationMillisecondsInActiveResource'] += elapsed_ms
+        timer
+      end
+
+      def add_cache(type, key, elapsed_ms, page, skip_backtrace = false, full_backtrace = false)
+        timer = CacheTimerStruct.new(type, key, elapsed_ms, page, self , skip_backtrace, full_backtrace)
+        timer['ParentTimingId'] = self['Id']
+        self['CacheTimings'].push(timer)
+        self['HasCacheTimings'] = true
+        self['CacheTimingsDurationMilliseconds'] += elapsed_ms
+        page['DurationMillisecondsInCache'] += elapsed_ms
         timer
       end
 
@@ -103,13 +129,13 @@ module Rack
         self['DurationMilliseconds'] = milliseconds
         self['IsTrivial'] = true if milliseconds < self["TrivialDurationThresholdMilliseconds"]
         self['DurationWithoutChildrenMilliseconds'] = milliseconds - @children_duration
-        
+
         if @parent
           @parent.children_duration += milliseconds
         end
 
-      end     
+      end
     end
   end
-  
+
 end

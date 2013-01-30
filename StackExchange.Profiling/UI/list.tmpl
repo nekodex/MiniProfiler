@@ -5,6 +5,8 @@
         <th>Name</th>
         <th>Started</th>
         <th>Sql Duration</th>
+        <th>AR Duration</th>
+        <th>Cache Duration</th>
         <th>Total Duration</th>
         <th>Request Start</th>
         <th>Response Start</th>
@@ -12,7 +14,7 @@
       </tr>
     </thead>
     <tbody>
-      
+
     </tbody>
   </table>
 </script>
@@ -22,6 +24,8 @@
       <a href="${MiniProfiler.path}results?id=${Id}">${Name}</a></td>
     <td class="date">${MiniProfiler.renderDate(Started)}</td>
     <td class="time">${DurationMillisecondsInSql}</td>
+    <td class="time">${DurationMillisecondsInActiveResource}</td>
+    <td class="time">${DurationMillisecondsInCache}</td>
     <td class="time">${DurationMilliseconds}</td>
     {{if ClientTimings}}
     <td class="time">${MiniProfiler.getClientTimingByName(ClientTimings,"Request").Start}</td>

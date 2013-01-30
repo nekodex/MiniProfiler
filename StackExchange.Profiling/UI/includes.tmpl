@@ -27,6 +27,12 @@
             {{if HasSqlTimings}}
               <th colspan="2">query time (ms)</th>
             {{/if}}
+            {{if HasActiveResourceTimings}}
+              <th colspan="2">AR time (ms)</th>
+            {{/if}}
+            {{if HasCacheTimings}}
+              <th colspan="2">cache time (ms)</th>
+            {{/if}}
             {{each CustomTimingNames}}
               <th colspan="2">${$value.toLowerCase()} (ms)</th>
             {{/each}}
@@ -47,6 +53,18 @@
               <td colspan="2" class="profiler-number profiler-percent-in-sql" title="${MiniProfiler.getSqlTimingsCount(Root)} queries spent ${MiniProfiler.formatDuration(DurationMillisecondsInSql)} ms of total request time">
                 ${MiniProfiler.formatDuration(DurationMillisecondsInSql / DurationMilliseconds * 100)}
                 <span class="profiler-unit">% in sql</span>
+              </td>
+            {{/if}}
+            {{if HasActiveResourceTimings}}
+              <td colspan="2" class="profiler-number profiler-percent-in-sql" title="${MiniProfiler.getActiveResourceTimingsCount(Root)} queries spent ${MiniProfiler.formatDuration(DurationMillisecondsInActiveResource)} ms of total request time">
+                ${MiniProfiler.formatDuration(DurationMillisecondsInActiveResource / DurationMilliseconds * 100)}
+                <span class="profiler-unit">% in AR</span>
+              </td>
+            {{/if}}
+            {{if HasCacheTimings}}
+              <td colspan="2" class="profiler-number profiler-percent-in-sql" title="${MiniProfiler.getCacheTimingsCount(Root)} queries spent ${MiniProfiler.formatDuration(DurationMillisecondsInCache)} ms of total request time">
+                ${MiniProfiler.formatDuration(DurationMillisecondsInCache / DurationMilliseconds * 100)}
+                <span class="profiler-unit">% in cache</span>
               </td>
             {{/if}}
             {{each CustomTimingNames}}
@@ -116,6 +134,54 @@
       </p>
     </div>
   {{/if}}
+  {{if HasActiveResouceTimings}}
+    <div class="profiler-queries">
+      <table>
+      <thead>
+        <tr>
+          <th style="text-align:right">step<br />time from start<br />query type<br />duration</th>
+          <th style="text-align:left">call stack<br />query</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{each(i, s) MiniProfiler.getActiveResouceTimings(Root)}}
+          {{tmpl({ g:s.prevGap }) "#ActiveResouceGapTemplate"}}
+          {{tmpl({ i:i, s:s }) "#ActiveResouceTimingTemplate"}}
+          {{if s.nextGap}}
+            {{tmpl({ g:s.nextGap }) "#ActiveResouceGapTemplate"}}
+          {{/if}}
+        {{/each}}
+      </tbody>
+      </table>
+      <p class="profiler-trivial-gap-container">
+        <a class="profiler-toggle-trivial-gaps" href="#">show trivial gaps</a>
+      </p>
+    </div>
+  {{/if}}
+  {{if HasCacheTimings}}
+    <div class="profiler-queries">
+      <table>
+      <thead>
+        <tr>
+          <th style="text-align:right">step<br />time from start<br />query type<br />duration</th>
+          <th style="text-align:left">call stack<br />query</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{each(i, s) MiniProfiler.getCacheTimings(Root)}}
+          {{tmpl({ g:s.prevGap }) "#CacheGapTemplate"}}
+          {{tmpl({ i:i, s:s }) "#CacheTimingTemplate"}}
+          {{if s.nextGap}}
+            {{tmpl({ g:s.nextGap }) "#CacheGapTemplate"}}
+          {{/if}}
+        {{/each}}
+      </tbody>
+      </table>
+      <p class="profiler-trivial-gap-container">
+        <a class="profiler-toggle-trivial-gaps" href="#">show trivial gaps</a>
+      </p>
+    </div>
+  {{/if}}
 
   </div>
 
@@ -156,6 +222,32 @@
     <td class="profiler-duration" title="aggregate duration of all queries in this step (excludes children)">
       ${MiniProfiler.formatDuration(timing.SqlTimingsDurationMilliseconds)}
     </td>
+  {{/if}}
+
+  {{if timing.HasActiveResourceTimings}}
+    <td class="profiler-duration {{if timing.HasDuplicateActiveResourceTimings}}profiler-warning{{/if}}" title="{{if timing.HasDuplicateActiveResourceTimings}}duplicate queries detected - {{/if}}{{if timing.ExecutedReaders > 0 || timing.ExecutedScalars > 0 || timing.ExecutedNonQueries > 0}}${timing.ExecutedReaders} reader, ${timing.ExecutedScalars} scalar, ${timing.ExecutedNonQueries} non-query statements executed{{/if}}">
+      <a class="profiler-queries-show">
+        {{if timing.HasDuplicateActiveResourceTimings}}<span class="profiler-nuclear">!</span>{{/if}}
+        ${timing.ActiveResourceTimings.length} <span class="profiler-unit">call(s)</span>
+      </a>
+    </td>
+    <td class="profiler-duration" title="aggregate duration of all queries in this step (excludes children)">
+      ${MiniProfiler.formatDuration(timing.ActiveResourceTimingsDurationMilliseconds)}
+    </td>
+  {{else}}
+    <td colspan='2'></td>
+  {{/if}}
+
+  {{if timing.HasCacheTimings}}
+    <td class="profiler-duration {{if timing.HasDuplicateCacheTimings}}profiler-warning{{/if}}" title="{{if timing.HasDuplicateCacheTimings}}duplicate queries detected - {{/if}}{{if timing.ExecutedReaders > 0 || timing.ExecutedScalars > 0 || timing.ExecutedNonQueries > 0}}${timing.ExecutedReaders} reader, ${timing.ExecutedScalars} scalar, ${timing.ExecutedNonQueries} non-query statements executed{{/if}}">
+      <a class="profiler-queries-show">
+        {{if timing.HasDuplicateCacheTimings}}<span class="profiler-nuclear">!</span>{{/if}}
+        ${timing.CacheTimings.length} <span class="profiler-unit">call(s)</span>
+      </a>
+    </td>
+    <td class="profiler-duration" title="aggregate duration of all queries in this step (excludes children)">
+      ${MiniProfiler.formatDuration(timing.CacheTimingsDurationMilliseconds)}
+    </td>
   {{else}}
     <td colspan='2'></td>
   {{/if}}
@@ -168,8 +260,6 @@
       <td class="profiler-duration" title="aggregate duration of all ${$value.toLowerCase()} invocations in this step (excludes children)">
         ${MiniProfiler.formatDuration(timing.CustomTimingStats[$value].Duration)}
       </td>
-    {{else}}
-      <td colspan="2"></td>
     {{/if}}
   {{/each}}
 
@@ -184,7 +274,6 @@
 </script>
 
 <script id="sqlTimingTemplate" type="text/x-jquery-tmpl">
-
   <tr class="{{if i % 2 == 1}}profiler-odd{{/if}}" data-timing-id="${s.ParentTimingId}">
     <td class="profiler-info">
       <div>${s.ParentTimingName}</div>
@@ -202,18 +291,74 @@
       </div>
     </td>
   </tr>
-
 </script>
-
 <script id="sqlGapTemplate" type="text/x-jquery-tmpl">
-
   <tr class="profiler-gap-info{{if g.duration < 4}} profiler-trivial-gaps{{/if}}">
     <td class="profiler-info">
-      ${g.duration} <span class="profiler-unit">ms</span>  
+      ${g.duration} <span class="profiler-unit">ms</span>
     </td>
     <td class="query">
       <div>${g.topReason.name} &mdash; ${g.topReason.duration.toFixed(2)} <span class="profiler-unit">ms</span></div>
     </td>
   </tr>
+</script>
 
+<script id="ActiveResourceTimingTemplate" type="text/x-jquery-tmpl">
+  <tr class="{{if i % 2 == 1}}profiler-odd{{/if}}" data-timing-id="${s.ParentTimingId}">
+    <td class="profiler-info">
+      <div>${s.ParentTimingName}</div>
+      <div class="profiler-number"><span class="profiler-unit">T+</span>${MiniProfiler.formatDuration(s.StartMilliseconds)} <span class="profiler-unit">ms</span></div>
+      <div>
+        {{if s.IsDuplicate}}<span class="profiler-warning">DUPLICATE</span>{{/if}}
+        ${MiniProfiler.renderExecuteType(s.ExecuteType)}
+      </div>
+      <div title="{{if s.ExecuteType == 3}}first result fetched: ${s.FirstFetchDurationMilliseconds}ms{{/if}}">${MiniProfiler.formatDuration(s.DurationMilliseconds)} <span class="profiler-unit">ms</span></div>
+    </td>
+    <td>
+      <div class="query">
+        <pre class="profiler-stack-trace">${s.StackTraceSnippet}</pre>
+        <pre class="prettyprint lang-sql"><code>${s.FormattedCommandString}   </code></pre>
+      </div>
+    </td>
+  </tr>
+</script>
+<script id="ActiveResourceGapTemplate" type="text/x-jquery-tmpl">
+  <tr class="profiler-gap-info{{if g.duration < 4}} profiler-trivial-gaps{{/if}}">
+    <td class="profiler-info">
+      ${g.duration} <span class="profiler-unit">ms</span>
+    </td>
+    <td class="query">
+      <div>${g.topReason.name} &mdash; ${g.topReason.duration.toFixed(2)} <span class="profiler-unit">ms</span></div>
+    </td>
+  </tr>
+</script>
+
+<script id="CacheTimingTemplate" type="text/x-jquery-tmpl">
+  <tr class="{{if i % 2 == 1}}profiler-odd{{/if}}" data-timing-id="${s.ParentTimingId}">
+    <td class="profiler-info">
+      <div>${s.ParentTimingName}</div>
+      <div class="profiler-number"><span class="profiler-unit">T+</span>${MiniProfiler.formatDuration(s.StartMilliseconds)} <span class="profiler-unit">ms</span></div>
+      <div>
+        {{if s.IsDuplicate}}<span class="profiler-warning">DUPLICATE</span>{{/if}}
+        ${MiniProfiler.renderExecuteType(s.ExecuteType)}
+      </div>
+      <div title="{{if s.ExecuteType == 3}}first result fetched: ${s.FirstFetchDurationMilliseconds}ms{{/if}}">${MiniProfiler.formatDuration(s.DurationMilliseconds)} <span class="profiler-unit">ms</span></div>
+    </td>
+    <td>
+      <div class="query">
+        <pre class="profiler-stack-trace">${s.StackTraceSnippet}</pre>
+        <pre class="prettyprint lang-sql"><code>${s.FormattedCommandString}   </code></pre>
+      </div>
+    </td>
+  </tr>
+</script>
+<script id="CacheGapTemplate" type="text/x-jquery-tmpl">
+  <tr class="profiler-gap-info{{if g.duration < 4}} profiler-trivial-gaps{{/if}}">
+    <td class="profiler-info">
+      ${g.duration} <span class="profiler-unit">ms</span>
+    </td>
+    <td class="query">
+      <div>${g.topReason.name} &mdash; ${g.topReason.duration.toFixed(2)} <span class="profiler-unit">ms</span></div>
+    </td>
+  </tr>
 </script>

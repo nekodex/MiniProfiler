@@ -24,7 +24,11 @@ module Rack
               "TrivialDurationThresholdMilliseconds" => 2,
               "Head" => nil,
               "DurationMillisecondsInSql" => 0,
-              "HasSqlTimings" => true,
+              "DurationMillisecondsInActiveResource" => 0,
+              "DurationMillisecondsInCache" => 0,
+              "HasSqlTimings" => false,
+              "HasActiveResourceTimings" => true,
+              "HasCacheTimings" => true,
               "HasDuplicateSqlTimings" => false,
               "ExecutedReaders" => 0,
               "ExecutedScalars" => 0,
@@ -43,16 +47,16 @@ module Rack
       def root
         @attributes['Root']
       end
-      
+
       def to_json(*a)
         attribs = @attributes.merge(
-          "Started" => '/Date(%d)/' % @attributes['Started'], 
+          "Started" => '/Date(%d)/' % @attributes['Started'],
           "DurationMilliseconds" => @attributes['Root']['DurationMilliseconds'],
           "CustomTimingNames" => @attributes['CustomTimingStats'].keys.sort
-        )        
+        )
         ::JSON.generate(attribs, :max_nesting => 100)
       end
     end
-    
+
   end
 end

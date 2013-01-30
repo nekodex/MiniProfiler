@@ -3,9 +3,9 @@ require 'mini_profiler/timer_struct'
 module Rack
   class MiniProfiler
 
-    # Timing system for a SQL query
-    class SqlTimerStruct < TimerStruct
-      def initialize(query, duration_ms, page, parent, skip_backtrace = false, full_backtrace = false)
+    # Timing system for cache requests
+    class CacheTimerStruct < TimerStruct
+      def initialize(type, key, duration_ms, page, parent, skip_backtrace = false, full_backtrace = false)
 
         stack_trace = nil
         unless skip_backtrace
@@ -34,7 +34,7 @@ module Rack
         @page = page
 
         super("ExecuteType" => 3, # TODO
-              "FormattedCommandString" => query,
+              "FormattedCommandString" => "#{type}: #{key}",
               "StackTraceSnippet" => stack_trace,
               "StartMilliseconds" => ((Time.now.to_f * 1000).to_i - page['Started']) - duration_ms,
               "DurationMilliseconds" => duration_ms,
@@ -48,8 +48,8 @@ module Rack
         return if @reported
         @reported = true
         self["DurationMilliseconds"] += elapsed_ms
-        @parent["SqlTimingsDurationMilliseconds"] += elapsed_ms
-        @page["DurationMillisecondsInSql"] += elapsed_ms
+        @parent["CacheTimingsDurationMilliseconds"] += elapsed_ms
+        @page["DurationMillisecondsInCache"] += elapsed_ms
       end
 
     end
