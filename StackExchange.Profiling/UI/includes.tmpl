@@ -145,10 +145,10 @@
       </thead>
       <tbody>
         {{each(i, s) MiniProfiler.getActiveResouceTimings(Root)}}
-          {{tmpl({ g:s.prevGap }) "#ActiveResouceGapTemplate"}}
-          {{tmpl({ i:i, s:s }) "#ActiveResouceTimingTemplate"}}
+          {{tmpl({ g:s.prevGap }) "#ActiveResourceGapTemplate"}}
+          {{tmpl({ i:i, s:s }) "#ActiveResourceTimingTemplate"}}
           {{if s.nextGap}}
-            {{tmpl({ g:s.nextGap }) "#ActiveResouceGapTemplate"}}
+            {{tmpl({ g:s.nextGap }) "#ActiveResourceGapTemplate"}}
           {{/if}}
         {{/each}}
       </tbody>
